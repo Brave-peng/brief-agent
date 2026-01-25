@@ -1,0 +1,53 @@
+# RSS Daily Configuration
+
+# LLM Providers
+llm:
+  default: "minimax"  # minimax 或 modelscope
+  providers:
+    minimax:
+      provider: "minimax"
+      api_key: "${MINIMAX_API_KEY}"
+      base_url: "https://api.minimaxi.com/v1"
+      model: "MiniMax-M2.1"
+    modelscope:
+      provider: "modelscope"
+      api_key: "${MODELSCOPE_API_KEY}"
+      base_url: "https://dashscope.aliyuncs.com/api/v1"
+      model: "qwen-turbo"
+    deepseek:
+      provider: "deepseek"
+      api_key: "${DEEPSEEK_API_KEY}"
+      base_url: "https://api.deepseek.com/v1"
+      model: "deepseek-chat"
+
+# RSS Feeds
+rss:
+  feeds:
+    - url: "https://www.36kr.com/feed"
+      name: "36氪"
+    - url: "https://sspai.com/feed"
+      name: "少数派"
+  fetch_interval: 3600  # 秒
+  timeout: 30
+
+# Database
+database:
+  path: "data/sqlite/rss.db"
+
+# Vector Database (RAG)
+vector_db:
+  path: "data/chroma"
+  collection: "rss_articles"
+
+# Logging
+logging:
+  level: "INFO"
+  file: "data/logs/app.log"
+  rotation: "10 MB"
+  retention: "7 days"
+
+# Scheduler
+scheduler:
+  timezone: "Asia/Shanghai"
+  report_daily_hour: 8    # 日报生成时间
+  report_weekly_hour: 9   # 周报生成时间（周一）

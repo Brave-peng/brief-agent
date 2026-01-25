@@ -1,0 +1,74 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+*.so
+.Python
+build/
+dist/
+wheels/
+*.egg-info/
+.eggs/
+*.manifest
+*.spec
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+.Env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Data directories
+data/
+!data/.gitkeep
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ruff
+.ruff_cache/
+
+# SQLite
+*.db
+*.sqlite3
+
+# uv
+.uv/
+
+# Project outputs
+output/
+
+# Claude Code
+.claude/plans/
+.claude/*.local.json
+
+# Temporary files
+*.tmp
+*.temp

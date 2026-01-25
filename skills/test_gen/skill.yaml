@@ -1,0 +1,3 @@
+name: test-gen
+description: 测试代码生成器 - 根据核心业务逻辑生成 pytest 测试
+instructions: instructions.md
