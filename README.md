@@ -230,6 +230,27 @@ mypy src/
 uv run pytest tests/
 ```
 
-## License
+## Roadmap
 
-MIT
+### 已完成
+
+| 状态 | 功能 | 说明 |
+|------|------|------|
+| ✅ | 日报提示词优化 | 今日概览 + 来源链接保留 |
+
+### 开发中
+
+| 状态 | 功能 | 说明 |
+|------|------|------|
+| ⏳ | Token 管理系统 | 费用统计、链路追踪、可视化 |
+| ⏳ | 视觉评估 Review Agent | PPT/图片质量评审 |
+| ⏳ | 视觉图片生成 Agent | 文生图/图生图 |
+| ⏳ | Marp 模板风格库 | 多种 PPT 视觉风格 |
+
+### 规划中
+
+- CI/CD 沙盒自动测试
+- 多开 Agent 提效方案
+
+## License
+GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
