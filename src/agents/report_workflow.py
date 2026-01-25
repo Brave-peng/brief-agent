@@ -104,32 +104,49 @@ def generate_report(state: DailyReportState) -> DailyReportState:
     date_range = state["date_range"]
     organized = state["organized"]
 
-    # 构建文章摘要
+    # 构建带链接的文章摘要
     articles_summary = []
     for category, articles in organized.items():
         articles_summary.append(f"\n## {category} ({len(articles)} 篇)")
-        for article in articles:
-            articles_summary.append(f"- **{article['title']}**")
-            articles_summary.append(f"  - {article['summary_llm'][:100]}..." if len(article['summary_llm']) > 100 else f"  - {article['summary_llm']}")
-            articles_summary.append(f"  - 关键词: {', '.join(article['keywords'][:5])}")
+        for i, article in enumerate(articles, 1):
+            articles_summary.append(f"[{i}] {article['title']}")
+            articles_summary.append(f"链接: {article['url']}")
+            articles_summary.append(f"核心: {article['summary_llm'][:200]}..." if len(article['summary_llm']) > 200 else f"核心: {article['summary_llm']}")
+            articles_summary.append("")
 
     articles_text = "\n".join(articles_summary)
 
-    prompt = f"""
-请为以下内容生成一份技术日报。
+    prompt = f"""{articles_text}
 
-日期: {date_range}
+请根据以上信息生成一份专业的AI日报。
 
-文章列表：
-{articles_text}
+## 输出格式
 
-要求：
-1. 使用 Markdown 格式
-2. 包含当日热点、值得关注的技术方向
-3. 每个分类用简洁的标题概述
-4. 列出 3-5 个重点关注的技术点
-5. 整体 300-500 字
-6. 只输出日报内容，不要有前言后语
+```
+AI三大媒体日报 - {date_range}
+📊 今日概览
+一句话总结当日AI领域的核心动向（2-3句话，100字以内）。
+
+📰 重点资讯
+
+"""
+
+    for category, articles in organized.items():
+        prompt += f"### {category}\n"
+        for i, article in enumerate(articles, 1):
+            prompt += f"[{i}] {article['title']}\n"
+            prompt += f"链接: {article['url']}\n"
+            prompt += f"核心内容：{article['summary_llm'][:200]}...\n\n"
+
+    prompt += """```
+
+## 要求
+1. 今日概览：2-3句话概括当日AI核心主题
+2. 重点资讯：按媒体分类，每家列3-5条最重要新闻
+3. 链接标记：使用 [编号] 格式
+4. 核心内容：3-5句话概括要点
+5. 总字数：800-1500字
+6. 使用中文标点符号
 """
 
     report_content = llm.generate(prompt)
