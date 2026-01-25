@@ -1,6 +1,6 @@
 # Prompt：根据 `script.json` 生成 `slides.md`（Marp）
 
-你是一个幻灯片生成助手，需要把 `workaround/稀缺/script.json` 转成适合视频口播和字幕叠加的 Marp Markdown 幻灯片 `workaround/稀缺/slides.md`。
+你是一个幻灯片生成助手，需要把json文件转成适合视频口播和字幕叠加的 Marp Markdown 幻灯片 。
 
 ## 输入
 - JSON 文件字段：

@@ -19,18 +19,41 @@ import json
 from pathlib import Path
 from typing import Any
 
+# 模板目录
+TEMPLATES_DIR = Path(__file__).parent / "templates"
 
-def json_to_marp_markdown(data: dict[str, Any]) -> str:
+
+def _load_template_style(template: str) -> str:
+    """加载模板样式"""
+    template_path = TEMPLATES_DIR / f"{template}.md"
+    if template_path.exists():
+        content = template_path.read_text(encoding="utf-8")
+        # 提取 <style>...</style> 部分
+        import re
+        style_match = re.search(r"<style>(.*?)</style>", content, re.DOTALL)
+        if style_match:
+            return f"<style>\n{style_match.group(1).strip()}\n</style>"
+    return ""
+
+
+def json_to_marp_markdown(data: dict[str, Any], template: str = "default") -> str:
     """将 JSON 数据转换为 Marp Markdown"""
     lines = []
 
+    # 加载模板样式并注入
+    template_style = _load_template_style(template)
+
     # 封面
     lines.append("---")
-    lines.append("theme: default")
     lines.append("paginate: false")
     lines.append("class: lead")
     lines.append("---")
     lines.append("")
+
+    # 注入模板样式
+    if template_style:
+        lines.append(template_style)
+        lines.append("")
     lines.append("<!-- _class: cover -->")
     lines.append(f"# {data.get('title', '日报')}")
     lines.append("")

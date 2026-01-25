@@ -9,7 +9,26 @@
 **无人值守的数字化内容分发中心**
 
 ```
-RSS/多源数据 → Agent 智能分析 → 短视频脚本 → JSON 生产协议 → 视频渲染 → 自动分发
+RSS/多源数据 → Agent 智能分析 → PPT/视频脚本 → JSON 生产协议 → 渲染输出 → 自动分发
+```
+
+### PPT Agent 工作流
+
+```
+输入 → 内容分析 → 结构规划 → 视觉设计 → 幻灯片生成 → 图片生成 → 质量检查 → 输出
+```
+
+### 核心节点
+
+| 节点 | 职责 |
+|------|------|
+| ContentAnalyzer | 分析输入内容，提取关键信息 |
+| StructurePlanner | 规划 PPT 结构，确定页数 |
+| VisualDesigner | 选择视觉风格、配色、字体 |
+| SlideGenerator | 生成每页内容（Markdown/Slide JSON） |
+| ImageGenerator | 为每页生成配图（无文字约束） |
+| QualityReviewer | 检查 PPT 质量（布局/视觉/内容/一致性） |
+| Renderer | 渲染最终 PPT (Marp → PPTX) |
 ```
 
 ---
@@ -27,8 +46,10 @@ brief-agent/
 │   ├── __init__.py      # 包初始化
 │   ├── config.py        # 配置加载模块
 │   ├── agents/          # Agent 层 (LangGraph)
+│   │   ├── __init__.py
 │   │   ├── article_parser_langgraph.py  # 文章解析工作流
-│   │   └── report_workflow.py           # 报告生成工作流
+│   │   ├── report_workflow.py           # 报告生成工作流
+│   │   └── image_gen_workflow.py        # 图片生成 Agent
 │   ├── services/        # 业务服务
 │   │   ├── rss.py       # RSS 抓取
 │   │   └── llm.py       # LLM 服务
@@ -49,10 +70,21 @@ brief-agent/
 │   │   │   ├── image_modelscope.py  # ModelScope
 │   │   │   └── image_aliyun.py      # 阿里云
 │   │   └── ppt/         # PPT 构建
-│   │       └── builder.py
+│   │       ├── base.py         # 抽象基类
+│   │       ├── builder.py      # 直接渲染构建器
+│   │       ├── marp_builder.py # Marp Markdown 构建器
+│   │       ├── json_to_marp.py # JSON 转 Marp
+│   │       └── templates/      # 模板
+│   │           ├── default.md
+│   │           ├── minimal.md
+│   │           ├── corporate.md
+│   │           ├── gradient.md
+│   │           └── dark.md
 │   └── prompts/         # 提示词模板
 ├── tests/
 ├── scripts/
+├── docs/                   # 设计文档
+│   └── ppt_agent_design.md  # PPT Agent 设计方案
 └── data/                # 数据库、向量库、日志
 ```
 
@@ -70,6 +102,10 @@ uv sync
 uv run python main.py fetch              # 抓取 RSS
 uv run python main.py parse              # 解析文章
 uv run python main.py report 2026-01-11  # 生成日报
+
+# 图片生成
+uv run python -m src.render.image.image_modelscope gen "提示词" -o img.jpg
+uv run python -m src.render.image.image_modelscope batch prompts.txt -w 3
 
 # 开发
 uv run pytest tests/                     # 测试
@@ -131,9 +167,10 @@ FastAPI 专项:
 |------|------|
 | Agent 编排 | LangGraph |
 | LLM | MiniMax, ModelScope, DeepSeek |
+| 图片生成 | ModelScope Z-Image-Turbo |
 | 数据库 | SQLite (SQLModel) + ChromaDB |
 | RSS | feedparser + httpx |
-| 渲染 | FFmpeg / MoviePy / python-pptx |
+| 渲染 | FFmpeg / MoviePy / python-pptx / Marp CLI |
 | 运维 | LangSmith, APScheduler |
 
 ---
@@ -153,7 +190,7 @@ FastAPI 专项:
 
 ```
 MINIMAX_API_KEY      # MiniMax LLM
-MODELSCOPE_API_KEY   # ModelScope/Qwen LLM
+MODELSCOPE_API_KEY   # ModelScope/Qwen LLM + Z-Image 图片生成
 DEEPSEEK_API_KEY     # DeepSeek LLM
 DASHSCOPE_API_KEY    # DashScope 音频
 LANGCHAIN_API_KEY    # LangSmith 追踪

@@ -14,6 +14,10 @@ from .json_to_marp import json_to_marp_markdown
 logger = logging.getLogger(__name__)
 
 
+# 模板目录
+TEMPLATES_DIR = Path(__file__).parent / "templates"
+
+
 @BuilderRegistry.register("marp")
 class MarpPPBuilder(PPTBuilder):
     """Marp PPT 构建器"""
@@ -28,6 +32,7 @@ class MarpPPBuilder(PPTBuilder):
         self.data = data
         self.provider = provider
         self.template = template
+        self.template_path = TEMPLATES_DIR / f"{template}.md"
         self.marp_cli_path = marp_cli_path or self._find_marp_cli()
         if self.marp_cli_path is None:
             logger.warning("Marp CLI 未安装，PPT 渲染功能不可用")
@@ -53,8 +58,8 @@ class MarpPPBuilder(PPTBuilder):
 
     def build(self, output_path: str) -> None:
         """构建 PPT"""
-        # 1. JSON → Marp Markdown
-        marp_content = json_to_marp_markdown(self.data)
+        # 1. JSON → Marp Markdown（注入模板样式）
+        marp_content = json_to_marp_markdown(self.data, template=self.template)
         marp_path = Path(output_path).with_suffix(".md")
         marp_path.write_text(marp_content, encoding="utf-8")
         logger.info("Marp Markdown 已生成: %s", marp_path)
@@ -64,26 +69,24 @@ class MarpPPBuilder(PPTBuilder):
             self._render_with_marp(marp_path, output_path)
         else:
             logger.warning("Marp CLI 未安装，保存 Marp Markdown 文件")
-            # 复制一份到 output 目录
-            output_marp = Path(output_path).parent / Path(output_path).stem
-            output_marp.with_suffix(".md").write_text(marp_content, encoding="utf-8")
 
     def _render_with_marp(self, marp_path: Path, output_path: str) -> None:
         """使用 marp CLI 渲染"""
+        # 使用 --theme-set 直接指定模板文件
         cmd = [
             self.marp_cli_path,
             str(marp_path),
             "--output",
             output_path,
             "--ppt",
-            "--theme",
-            self.template,
+            "--theme-set",
+            str(self.template_path),
         ]
 
         try:
             result = subprocess.run(cmd, capture_output=True, text=True)
             if result.returncode == 0:
-                logger.info("PPT 已生成: %s", output_path)
+                logger.info("PPT 已生成: %s (模板: %s)", output_path, self.template)
             else:
                 logger.error("Marp 渲染失败: %s", result.stderr)
         except FileNotFoundError:
