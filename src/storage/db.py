@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from sqlmodel import Field, Session, SQLModel, create_engine, select
+from sqlmodel.sql.expression import desc
 
 
 # ============ 模型定义 ============
@@ -93,7 +94,7 @@ class Database:
 
     # ============ Article 操作 ============
 
-    def upsert_article(self, article: Article) -> int:
+    def upsert_article(self, article: Article) -> int | None:
         """插入或更新文章"""
         with self._session() as session:
             # 检查是否存在
@@ -140,7 +141,7 @@ class Database:
             if end_date:
                 query = query.where(Article.published_at <= end_date)
 
-            query = query.order_by(Article.published_at.desc()).limit(limit)
+            query = query.order_by(desc(Article.published_at)).limit(limit)
             return list(session.exec(query).all())
 
     def get_articles_by_date(self, start: str, end: str | None = None) -> List[Article]:
@@ -157,8 +158,8 @@ class Database:
 
             query = (
                 select(Article)
-                .where(Article.id.notin_(parsed_ids))
-                .order_by(Article.published_at.desc())
+                .where(Article.id.not_in(parsed_ids))
+                .order_by(desc(Article.published_at))
                 .limit(limit)
             )
             return list(session.exec(query).all())
@@ -206,7 +207,7 @@ class Database:
             query = (
                 select(Article, ArticleAnalysis)
                 .join(ArticleAnalysis, Article.id == ArticleAnalysis.article_id)
-                .order_by(Article.published_at.desc())
+                .order_by(desc(Article.published_at))
                 .limit(limit)
             )
             results = session.exec(query).all()
@@ -245,5 +246,5 @@ class Database:
             query = select(Report)
             if report_type:
                 query = query.where(Report.report_type == report_type)
-            query = query.order_by(Report.created_at.desc()).limit(limit)
+            query = query.order_by(desc(Report.created_at)).limit(limit)
             return list(session.exec(query).all())

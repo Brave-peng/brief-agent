@@ -45,42 +45,48 @@ brief-agent/
 ├── src/
 │   ├── __init__.py      # 包初始化
 │   ├── config.py        # 配置加载模块
+│   ├── models/          # 外部模型 API
+│   │   ├── __init__.py
+│   │   ├── llm/         # 文本 LLM 管理
+│   │   │   ├── __init__.py
+│   │   │   └── manager.py     # 统一管理 (MiniMax/DeepSeek/ModelScope)
+│   │   ├── image/       # 图片生成
+│   │   │   ├── __init__.py
+│   │   │   ├── image_modelscope.py  # ModelScope Z-Image-Turbo
+│   │   │   ├── oss.py               # OSS 上传
+│   │   │   └── aliyun/              # 阿里云图片生成
+│   │   └── audio/       # TTS 音频
+│   │       ├── __init__.py
+│   │       ├── generator.py   # 统一生成器
+│   │       ├── minimax.py     # MiniMax TTS
+│   │       └── dashscope.py   # DashScope CosyVoice
 │   ├── agents/          # Agent 层 (LangGraph)
 │   │   ├── __init__.py
 │   │   ├── article_parser_langgraph.py  # 文章解析工作流
 │   │   ├── report_workflow.py           # 报告生成工作流
 │   │   └── image_gen_workflow.py        # 图片生成 Agent
 │   ├── services/        # 业务服务
-│   │   ├── rss.py       # RSS 抓取
-│   │   └── llm.py       # LLM 服务
+│   │   ├── __init__.py
+│   │   └── rss.py       # RSS 抓取
 │   ├── storage/         # 数据存储
+│   │   ├── __init__.py
 │   │   ├── db.py        # SQLModel (SQLite)
 │   │   ├── vector_store.py  # ChromaDB
 │   │   └── logger.py    # loguru 日志
-│   ├── render/          # 渲染层
-│   │   ├── llm/         # LLM 管理器
-│   │   │   ├── manager.py     # 统一管理
-│   │   │   ├── minimax.py     # MiniMax
-│   │   │   └── deepseek.py    # DeepSeek
-│   │   ├── audio/       # TTS 音频
-│   │   │   ├── generator.py   # 生成器
-│   │   │   ├── minimax.py     # MiniMax TTS
-│   │   │   └── dashscope.py   # DashScope TTS
-│   │   ├── image/       # 图生图
-│   │   │   ├── image_modelscope.py  # ModelScope
-│   │   │   └── image_aliyun.py      # 阿里云
-│   │   └── ppt/         # PPT 构建
-│   │       ├── base.py         # 抽象基类
-│   │       ├── builder.py      # 直接渲染构建器
-│   │       ├── marp_builder.py # Marp Markdown 构建器
-│   │       ├── json_to_marp.py # JSON 转 Marp
-│   │       └── templates/      # 模板
-│   │           ├── default.md
-│   │           ├── minimal.md
-│   │           ├── corporate.md
-│   │           ├── gradient.md
-│   │           └── dark.md
-│   └── prompts/         # 提示词模板
+│   └── render/          # 渲染层（本地输出）
+│       ├── __init__.py
+│       └── ppt/         # PPT 构建
+│           ├── __init__.py
+│           ├── base.py         # 抽象基类
+│           ├── builder.py      # 直接渲染构建器
+│           ├── marp_builder.py # Marp Markdown 构建器
+│           ├── json_to_marp.py # JSON 转 Marp
+│           └── templates/      # 模板
+│               ├── default.md
+│               ├── minimal.md
+│               ├── corporate.md
+│               ├── gradient.md
+│               └── dark.md
 ├── tests/
 ├── scripts/
 ├── docs/                   # 设计文档
@@ -104,8 +110,8 @@ uv run python main.py parse              # 解析文章
 uv run python main.py report 2026-01-11  # 生成日报
 
 # 图片生成
-uv run python -m src.render.image.image_modelscope gen "提示词" -o img.jpg
-uv run python -m src.render.image.image_modelscope batch prompts.txt -w 3
+uv run python -m src.models.image.image_modelscope gen "提示词" -o img.jpg
+uv run python -m src.models.image.image_modelscope batch prompts.txt -w 3
 
 # 开发
 uv run pytest tests/                     # 测试
@@ -143,7 +149,7 @@ FastAPI 专项:
 触发词: "生成测试", "写测试", "test"
 
 功能:
-- 优先级: Agents > Services > Storage > Render
+- 优先级: Agents > Services > Storage > Models > Render
 - 只生成核心路径测试
 - pytest 框架
 - 包含 Mock 策略 (LLM/RSS/文件/DB)
@@ -166,8 +172,9 @@ FastAPI 专项:
 | 层级 | 技术 |
 |------|------|
 | Agent 编排 | LangGraph |
-| LLM | MiniMax, ModelScope, DeepSeek |
+| LLM | MiniMax, ModelScope (Qwen), DeepSeek |
 | 图片生成 | ModelScope Z-Image-Turbo |
+| TTS 音频 | DashScope CosyVoice, MiniMax |
 | 数据库 | SQLite (SQLModel) + ChromaDB |
 | RSS | feedparser + httpx |
 | 渲染 | FFmpeg / MoviePy / python-pptx / Marp CLI |
@@ -183,18 +190,20 @@ FastAPI 专项:
 - **日志**: loguru（不用 print）
 - **错误处理**: 直接 raise，不捕获
 - **配置**: 业务配置用 pyproject.toml，密钥用 .env
+- **模型调用**: 统一放在 `models/` 目录，避免循环依赖
 
 ---
 
 ## 环境变量
 
 ```
-MINIMAX_API_KEY      # MiniMax LLM
+MINIMAX_API_KEY      # MiniMax LLM + TTS
 MODELSCOPE_API_KEY   # ModelScope/Qwen LLM + Z-Image 图片生成
 DEEPSEEK_API_KEY     # DeepSeek LLM
 DASHSCOPE_API_KEY    # DashScope 音频
 LANGCHAIN_API_KEY    # LangSmith 追踪
 REDIS_URL            # 任务队列（可选）
+OSS_*                # 阿里云 OSS（可选）
 ```
 
 ---
@@ -244,4 +253,27 @@ uv run python main.py fetch --dry-run
 预期：显示抓取计划但不实际请求
 ```
 
-思考：如何使用LangSmith 来处理调试、测试、部署、监控。
+---
+
+## 模块导入规范
+
+```python
+# 模型调用（外部 API）
+from src.models.llm import LLMManager
+from src.models.image import generate_image
+from src.models.audio import AudioGenerator
+
+# Agent 编排
+from src.agents.report_workflow import generate_daily_report
+from src.agents.image_gen_workflow import generate_image_agent
+
+# 业务服务
+from src.services.rss import RSSFetcher
+
+# 本地渲染
+from src.render.ppt import DirectPPBuilder, MarpPPBuilder
+
+# 配置和工具
+from src.config import load_config
+from src.storage import get_db
+```

@@ -15,7 +15,7 @@ from src.config import load_config
 from src.storage import get_db
 from src.storage.logger import setup_logger
 from src.services.rss import RSSFetcher
-from src.services.llm import LLMService
+from src.llm import LLMManager
 from src.agents.article_parser_langgraph import parse_batch
 from src.agents.report_workflow import generate_daily_report
 from src.render.ppt import BuilderRegistry, DirectPPBuilder

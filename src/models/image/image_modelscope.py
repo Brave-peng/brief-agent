@@ -15,9 +15,9 @@ import logging
 import threading
 from functools import wraps
 from typing import Optional
+from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from enum import Enum
 
 import typer
 from PIL import Image
@@ -28,7 +28,7 @@ import requests
 load_dotenv()
 
 # 配置
-DEFAULT_API_KEY = "ms-14ad41f3-92a9-45f1-91c4-8aa67f7e13ad"
+DEFAULT_API_KEY = None  # 从环境变量 MODELSCOPE_API_KEY 读取
 BASE_URL = "https://api-inference.modelscope.cn/"
 DEFAULT_MODEL = "Tongyi-MAI/Z-Image-Turbo"
 DEFAULT_WORKERS = 3
@@ -144,7 +144,9 @@ def generate_image(
     Returns:
         是否成功
     """
-    api_key = api_key or os.getenv("MODELSCOPE_API_KEY", DEFAULT_API_KEY)
+    api_key = api_key or os.getenv("MODELSCOPE_API_KEY")
+    if not api_key:
+        raise ValueError("未配置 MODELSCOPE_API_KEY 环境变量")
     limiter = rate_limiter_instance or rate_limiter
 
     headers = {
@@ -153,7 +155,7 @@ def generate_image(
     }
 
     start_time = time.time()
-    print(f"[开始] {prompt[:40]}...")
+    logger.info(f"[开始] {prompt[:40]}...")
 
     # 速率限制
     limiter.acquire()
@@ -174,22 +176,22 @@ def generate_image(
             if response.status_code == 429:
                 # Rate limit, wait and retry
                 wait_time = int(response.headers.get("Retry-After", 5))
-                print(f"[限流] 等待 {wait_time} 秒...")
+                logger.warning(f"[限流] 等待 {wait_time} 秒...")
                 time.sleep(wait_time)
                 continue
 
             response.raise_for_status()
             task_id = response.json()["task_id"]
-            print(f"[提交] 任务ID: {task_id}")
+            logger.info(f"[提交] 任务ID: {task_id}")
             break
 
         except Exception as e:
             if attempt < max_retries:
                 delay = retry_config.get_delay(attempt)
-                print(f"[重试] {attempt + 1}/{max_retries}: {e} (等待 {delay:.1f}s)")
+                logger.warning(f"[重试] {attempt + 1}/{max_retries}: {e} (等待 {delay:.1f}s)")
                 time.sleep(delay)
             else:
-                print(f"[失败] {output_path}: {e}")
+                logger.error(f"[失败] {output_path}: {e}")
                 return False
 
     if not task_id:
@@ -216,12 +218,12 @@ def generate_image(
                 image = Image.open(BytesIO(img_response.content))
                 image.save(output_path)
                 elapsed = time.time() - start_time
-                print(f"[完成] {output_path} ({elapsed:.1f}s)")
+                logger.info(f"[完成] {output_path} ({elapsed:.1f}s)")
                 return True
 
             if status == "FAILED":
                 error_msg = data.get("message", "未知错误")
-                print(f"[失败] {output_path}: {error_msg}")
+                logger.error(f"[失败] {output_path}: {error_msg}")
                 return False
 
             # 继续轮询
@@ -229,15 +231,15 @@ def generate_image(
             elapsed = time.time() - start_time
 
         except requests.exceptions.Timeout:
-            print(f"[超时] 轮询超时，继续等待...")
+            logger.warning("[超时] 轮询超时，继续等待...")
             time.sleep(DEFAULT_POLL_INTERVAL)
             elapsed = time.time() - start_time
         except Exception as e:
-            print(f"[错误] {e}")
+            logger.error(f"[错误] {e}")
             time.sleep(DEFAULT_POLL_INTERVAL)
             elapsed = time.time() - start_time
 
-    print(f"[超时] {output_path} (超过 {DEFAULT_MAX_POLL_TIME}s)")
+    logger.error(f"[超时] {output_path} (超过 {DEFAULT_MAX_POLL_TIME}s)")
     return False
 
 
@@ -266,7 +268,7 @@ def generate_images_batch(
 
     results = {}
 
-    print(f"[批量] 开始生成 {len(tasks)} 张图片 (并发: {max_workers}, 速率: {rate_limit}/s)")
+    logger.info(f"[批量] 开始生成 {len(tasks)} 张图片 (并发: {max_workers}, 速率: {rate_limit}/s)")
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_path = {
@@ -289,14 +291,14 @@ def generate_images_batch(
             try:
                 results[output_path] = future.result()
             except Exception as e:
-                print(f"[异常] {output_path}: {e}")
+                logger.error(f"[异常] {output_path}: {e}")
                 results[output_path] = False
 
             # 进度显示
-            print(f"[进度] {completed}/{total}")
+            logger.info(f"[进度] {completed}/{total}")
 
     success_count = sum(1 for v in results.values() if v)
-    print(f"\n[结果] {success_count}/{len(tasks)} 成功")
+    logger.info(f"\n[结果] {success_count}/{len(tasks)} 成功")
 
     return results
 
@@ -350,9 +352,9 @@ def batch(
 
     failed = [k for k, v in results.items() if not v]
     if failed:
-        print(f"\n失败的任务:")
+        logger.error("\n失败的任务:")
         for path in failed:
-            print(f"  - {path}")
+            logger.error(f"  - {path}")
         raise typer.Exit(1)
 
 

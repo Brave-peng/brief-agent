@@ -2,7 +2,6 @@
 PPT 构建器基类与注册机制
 """
 from abc import ABC, abstractmethod
-from typing import Any
 
 
 class PPTBuilder(ABC):

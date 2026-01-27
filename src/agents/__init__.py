@@ -1,17 +1,14 @@
 """Agent implementations for report generation"""
 
-from src.services.llm import LLMService
+from src.models.llm import LLMManager
 
-# 全局 LLM 服务实例
-_llm_service: LLMService | None = None
+# 全局 LLM 管理器实例
+_llm_manager: LLMManager | None = None
 
 
-def get_llm() -> LLMService:
-    """获取全局 LLM 服务实例"""
-    global _llm_service
-    if _llm_service is None:
-        from src.config import load_config
-
-        config = load_config()
-        _llm_service = LLMService(config.llm)
-    return _llm_service
+def get_llm() -> LLMManager:
+    """获取全局 LLM 管理器实例"""
+    global _llm_manager
+    if _llm_manager is None:
+        _llm_manager = LLMManager("deepseek")
+    return _llm_manager

@@ -1,8 +1,7 @@
 """
-重构后的工具模块 (v2)
+渲染模块 - PPT 构建
+注意: 图片生成和音频生成已迁移到 src.models/
 """
-from . import audio
-from . import llm
 from . import ppt
 
-__all__ = ["audio", "llm", "ppt"]
+__all__ = ["ppt"]

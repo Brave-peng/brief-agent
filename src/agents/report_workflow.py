@@ -12,7 +12,7 @@
 """
 import logging
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List, Optional, TypedDict
 from langgraph.graph import StateGraph, END, START
 
@@ -63,7 +63,7 @@ def collect_articles(state: DailyReportState) -> DailyReportState:
 
 def organize_articles(state: DailyReportState) -> DailyReportState:
     """按 category 分类组织文章"""
-    log.info(f"[organize] 开始分类组织文章")
+    log.info("[organize] 开始分类组织文章")
 
     if state.get("status") == "failed":
         return state
@@ -94,7 +94,7 @@ def organize_articles(state: DailyReportState) -> DailyReportState:
 
 def generate_report(state: DailyReportState) -> DailyReportState:
     """使用 LLM 生成日报"""
-    log.info(f"[generate] 开始生成日报")
+    log.info("[generate] 开始生成日报")
 
     if state.get("status") == "failed":
         return state
@@ -162,7 +162,7 @@ AI三大媒体日报 - {date_range}
 
 def save_report(state: DailyReportState) -> DailyReportState:
     """保存日报到数据库"""
-    log.info(f"[save] 开始保存日报")
+    log.info("[save] 开始保存日报")
 
     if state.get("status") == "failed":
         return state

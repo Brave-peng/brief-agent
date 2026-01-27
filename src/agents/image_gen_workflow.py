@@ -7,8 +7,7 @@ import logging
 from typing import Optional
 from pathlib import Path
 
-from src.render.image.image_modelscope import generate_image
-from src.storage.logger import logger
+from src.models.image import generate_image
 
 log = logging.getLogger(__name__)
 

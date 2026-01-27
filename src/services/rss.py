@@ -3,7 +3,7 @@ RSS 抓取服务模块
 """
 import feedparser
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 from bs4 import BeautifulSoup
 import httpx
 
@@ -31,7 +31,7 @@ class RSSFetcher:
                 logger.error(f"抓取 {feed_config.name} 失败: {e}")
         return total_fetched
 
-    def fetch_feed(self, feed_config: RSSFeedConfig) -> bool:
+    def fetch_feed(self, feed_config: RSSFeedConfig) -> int:
         """抓取单个 RSS 源"""
         try:
             with httpx.Client(timeout=self.config.timeout) as client:

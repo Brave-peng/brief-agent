@@ -47,8 +47,14 @@ llm:
   providers:
     minimax:
       api_key: "${MINIMAX_API_KEY}"  # 从环境变量读取
-      base_url: "https://api.minimax.chat/v1"
+      base_url: "https://api.minimaxi.com/v1"
       model: "abab6.5s-chat"
+    deepseek:
+      api_key: "${DEEPSEEK_API_KEY}"
+      model: "deepseek-chat"
+    modelscope:
+      api_key: "${MODELSCOPE_API_KEY}"
+      model: "qwen-turbo"
 
 # RSS 订阅源
 rss:
@@ -85,48 +91,41 @@ brief-agent/
 ├── env.example          # 环境变量示例
 ├── pyproject.toml       # 项目配置
 ├── uv.lock              # uv 锁定文件
-├── uv.toml              # uv 配置
 ├── README.md            # 项目文档
 ├── CLAUDE.md            # AI 助手文档
-├── scripts/             # 工具脚本
-│   ├── fetch_sample.py
-│   ├── inspect_html.py
-│   └── migrate_db.py
 ├── src/
 │   ├── __init__.py      # 包初始化
 │   ├── config.py        # 配置加载
+│   ├── models/          # 外部模型 API
+│   │   ├── llm/         # 文本 LLM (MiniMax/DeepSeek/ModelScope)
+│   │   │   ├── __init__.py
+│   │   │   └── manager.py
+│   │   ├── image/       # 图片生成 (ModelScope Z-Image-Turbo)
+│   │   │   ├── __init__.py
+│   │   │   ├── image_modelscope.py
+│   │   │   ├── oss.py
+│   │   │   └── aliyun/
+│   │   └── audio/       # TTS 音频 (DashScope/MiniMax)
+│   │       ├── __init__.py
+│   │       ├── generator.py
+│   │       ├── dashscope.py
+│   │       └── minimax.py
 │   ├── prompts/         # 提示词模板
-│   │   └── generate_slides_from_script.md
 │   ├── agents/          # Agent 层 (LangGraph)
 │   │   ├── __init__.py
 │   │   ├── article_parser_langgraph.py  # 文章解析工作流
-│   │   └── report_workflow.py           # 报告生成工作流
+│   │   ├── report_workflow.py           # 报告生成工作流
+│   │   └── image_gen_workflow.py        # 图片生成 Agent
 │   ├── services/        # 业务服务
 │   │   ├── __init__.py
-│   │   ├── rss.py       # RSS 抓取
-│   │   └── llm.py       # LLM 服务
+│   │   └── rss.py       # RSS 抓取
 │   ├── storage/         # 数据存储
 │   │   ├── __init__.py
 │   │   ├── db.py        # SQLite (SQLModel)
 │   │   ├── logger.py    # loguru 日志
 │   │   └── vector_store.py  # ChromaDB
-│   └── render/          # 渲染层
+│   └── render/          # 渲染层（本地输出）
 │       ├── __init__.py
-│       ├── llm/         # LLM Provider
-│       │   ├── __init__.py
-│       │   ├── manager.py     # 统一管理
-│       │   ├── minimax.py     # MiniMax
-│       │   └── deepseek.py    # DeepSeek
-│       ├── audio/       # TTS 音频
-│       │   ├── __init__.py
-│       │   ├── generator.py   # 生成器
-│       │   ├── minimax.py     # MiniMax TTS
-│       │   └── dashscope.py   # DashScope TTS
-│       ├── image/       # 图生图
-│       │   ├── __init__.py
-│       │   ├── image_modelscope.py  # ModelScope
-│       │   ├── image_aliyun.py      # 阿里云
-│       │   └── oss.py               # OSS 上传
 │       └── ppt/         # PPT 构建
 │           ├── __init__.py
 │           ├── base.py         # 抽象基类
@@ -134,8 +133,13 @@ brief-agent/
 │           ├── marp_builder.py # Marp Markdown 构建器
 │           ├── json_to_marp.py # JSON 转 Marp
 │           └── templates/      # 模板
-│               └── default.md
+│               ├── default.md
+│               ├── minimal.md
+│               ├── corporate.md
+│               ├── gradient.md
+│               └── dark.md
 ├── tests/               # 测试文件
+├── docs/                # 设计文档
 └── data/                # 数据目录（自动创建）
     ├── sqlite/          # SQLite 数据库
     ├── chroma/          # ChromaDB 向量库
@@ -193,7 +197,7 @@ scheduler:
 # 生成核心业务逻辑的 pytest 测试
 # 触发词: "生成测试", "写测试", "test"
 ```
-- 只测核心路径（Agents > Services > Render）
+- 只测核心路径（Agents > Services > Models > Render）
 - 生成 pytest 测试代码
 - 包含 Mock 策略
 
@@ -239,13 +243,14 @@ uv run pytest tests/
 | ✅ | 日报提示词优化 | 今日概览 + 来源链接保留 |
 | ✅ | Marp 模板风格库 | 5 种视觉风格（default/minimal/corporate/gradient/dark） |
 | ✅ | 视觉图片生成 Agent | ModelScope ZImage + 中文提示词 + 速率限制 |
+| ✅ | 代码结构重构 | models/ 目录统一管理外部模型 API |
 
 ### 开发中
 
 | 状态 | 功能 | 说明 |
 |------|------|------|
-| ⏳ | PPT Agent | 端到端 PPT 自动生成（内容分析→结构规划→视觉设计→图片生成→渲染输出） |
-| ⏳ | Token 管理系统 | 费用统计、链路追踪、可视化 |
+| ⏳ | PPT Agent路线 | 端到端 PPT 自动生成（内容分析→结构规划→视觉设计→图片生成→渲染输出）,参考paper:[PPTAgent](https://arxiv.org/abs/2501.03936)|
+| ⏳ | Token 管理系统 | 费用统计、链路追踪、可视化，考虑使用LangSmith|
 | ⏳ | 视觉评估 Review Agent | PPT/图片质量评审 |
 
 ### 规划中
@@ -253,9 +258,6 @@ uv run pytest tests/
 - CI/CD 沙盒自动测试
 - 多开 Agent 提效方案
 
-## PPT Agent 设计
-
-参考: [docs/ppt_agent_design.md](docs/ppt_agent_design.md)
-
 ## License
+
 GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007

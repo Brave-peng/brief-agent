@@ -2,7 +2,7 @@
 配置文件加载模块
 """
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 import yaml
 from pydantic import BaseModel
 
@@ -71,12 +71,15 @@ class Config(BaseModel):
     scheduler: SchedulerConfig
 
 
-def load_config(config_path: Optional[str] = None) -> Config:
+def load_config(config_path: str | None = None) -> Config:
     """加载配置文件"""
+    path: Path
     if config_path is None:
-        config_path = Path(__file__).parent.parent / "config.yaml"
+        path = Path(__file__).parent.parent / "config.yaml"
+    else:
+        path = Path(config_path)
 
-    with open(config_path, "r", encoding="utf-8") as f:
+    with open(path, "r", encoding="utf-8") as f:
         raw = yaml.safe_load(f)
 
     # 替换环境变量

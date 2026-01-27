@@ -3,7 +3,6 @@
 """
 from pathlib import Path
 from typing import List, Optional
-import uuid
 
 import chromadb
 from chromadb.config import Settings

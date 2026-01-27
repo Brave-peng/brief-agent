@@ -3,7 +3,6 @@ import json
 import time
 import requests
 from http import HTTPStatus
-import dashscope
 from dashscope import ImageSynthesis
 from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor, as_completed
