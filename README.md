@@ -1,6 +1,8 @@
 # Brief Agent
 
-企业级多模态知识内生 Agent 平台 (AI 简报制片人) - 基于 LangGraph 的多模态内容自动生成与分发系统。
+企业级多模态知识内生 Agent 平台 (目标是把notebooklm狠狠学习一番) - 基于 LangGraph 的多模态内容自动生成与分发系统。
+**项目较多vibe coding, 在逐步的review代码中, 欢迎各路大佬执教.**
+
 
 ## 功能特性
 
@@ -139,7 +141,6 @@ brief-agent/
 │               ├── gradient.md
 │               └── dark.md
 ├── tests/               # 测试文件
-├── docs/                # 设计文档
 └── data/                # 数据目录（自动创建）
     ├── sqlite/          # SQLite 数据库
     ├── chroma/          # ChromaDB 向量库

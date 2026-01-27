@@ -17,7 +17,7 @@ from typing import List, Optional, TypedDict
 from langgraph.graph import StateGraph, END, START
 
 from src.storage.db import Database
-from src.services import get_llm
+from src.agents import get_llm
 
 log = logging.getLogger(__name__)
 

@@ -16,7 +16,6 @@ from src.storage import get_db
 from src.storage.logger import setup_logger
 from src.services.rss import RSSFetcher
 from src.llm import LLMManager
-from src.agents.article_parser_langgraph import parse_batch
 from src.agents.report_workflow import generate_daily_report
 from src.render.ppt import BuilderRegistry, DirectPPBuilder
 
@@ -147,10 +146,10 @@ def _generate_ppt(markdown_content: str, date: str, builder_name: str) -> None:
 
     # 1. LLM 智能拆分
     config = load_config()
-    llm_service = LLMService(config.llm)
+    llm = LLMManager(config.llm.default)
 
     prompt = PPT_GENERATE_PROMPT.format(markdown_content=markdown_content)
-    json_str = llm_service.generate(prompt, provider=config.llm.default)
+    json_str = llm.complete("", prompt)
 
     # 解析 JSON
     import json
