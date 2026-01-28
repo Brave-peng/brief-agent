@@ -1,7 +1,7 @@
 # Brief Agent
 
 企业级多模态知识内生 Agent 平台 (目标是把notebooklm狠狠学习一番) - 基于 LangGraph 的多模态内容自动生成与分发系统。
-**项目较多vibe coding, 在逐步的review代码中, 欢迎各路大佬执教.**
+**项目较多vibe coding, 在逐步的review代码中, 欢迎各路大佬指教.**
 
 
 ## 功能特性
@@ -82,13 +82,14 @@ vector_db:
 uv run python main.py fetch              # 抓取 RSS
 uv run python main.py parse              # 解析文章
 uv run python main.py report 2026-01-11  # 生成日报
+uv run python main.py ppt from-file report.md  # 从 Markdown 生成 PPT
 ```
 
 ## 项目结构
 
 ```
 brief-agent/
-├── main.py              # CLI 入口 (typer)
+├── main.py              # CLI 入口（轻量包装）
 ├── config.yaml          # 配置文件
 ├── env.example          # 环境变量示例
 ├── pyproject.toml       # 项目配置
@@ -97,6 +98,11 @@ brief-agent/
 ├── CLAUDE.md            # AI 助手文档
 ├── src/
 │   ├── __init__.py      # 包初始化
+│   ├── cli/             # CLI 模块
+│   │   ├── __init__.py
+│   │   ├── main.py      # CLI 入口（typer）
+│   │   ├── ppt.py       # PPT 命令
+│   │   └── ppt_converter.py  # Markdown → PPT 结构化
 │   ├── config.py        # 配置加载
 │   ├── models/          # 外部模型 API
 │   │   ├── llm/         # 文本 LLM (MiniMax/DeepSeek/ModelScope)

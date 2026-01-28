@@ -8,6 +8,9 @@ JSON → Marp Markdown 转换器
     {
       "id": 1,
       "title": "GPT-5发布",
+      "layout": "stack",           // 布局类型: stack, side-by-side, image-first, cards
+      "image": "url或路径",        // 图片（可选）
+      "image_position": "right",   // 图片位置: left/right (仅 side-by-side)
       "key_points": "一句话关键信息",
       "bullet_points": ["要点1", "要点2"],
       "speaker_notes": "语音播报内容"
@@ -22,6 +25,9 @@ from typing import Any
 # 模板目录
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
+# 支持的布局类型
+LAYOUTS = {"stack", "side-by-side", "image-first", "cards"}
+
 
 def _load_template_style(template: str) -> str:
     """加载模板样式"""
@@ -34,6 +40,23 @@ def _load_template_style(template: str) -> str:
         if style_match:
             return f"<style>\n{style_match.group(1).strip()}\n</style>"
     return ""
+
+
+def _build_layout_class(layout: str, image_position: str | None = None) -> str:
+    """构建布局 class 字符串"""
+    if layout == "stack":
+        return "stack"
+    elif layout == "side-by-side":
+        if image_position == "left":
+            return "side-by-side image-left"
+        elif image_position == "right":
+            return "side-by-side image-right"
+        return "side-by-side"
+    elif layout == "image-first":
+        return "image-first"
+    elif layout == "cards":
+        return "cards"
+    return "stack"
 
 
 def json_to_marp_markdown(data: dict[str, Any], template: str = "default") -> str:
@@ -70,6 +93,9 @@ def json_to_marp_markdown(data: dict[str, Any], template: str = "default") -> st
     for i, slide in enumerate(slides):
         slide_id = slide.get("id", i + 1)
         title = slide.get("title", f"话题 {slide_id}")
+        layout = slide.get("layout", "stack")
+        image = slide.get("image", "")
+        image_position = slide.get("image_position", "right")
         key_points = slide.get("key_points", "")
         bullet_points = slide.get("bullet_points", [])
         speaker_notes = slide.get("speaker_notes", "")
@@ -77,23 +103,60 @@ def json_to_marp_markdown(data: dict[str, Any], template: str = "default") -> st
         lines.append("---")
         lines.append("")
 
-        # 交替主题色
+        # 构建 class 字符串（布局 + 交替主题）
+        classes = []
+        if layout and layout != "stack":
+            classes.append(layout)
+        if image_position and layout == "side-by-side":
+            classes.append(f"image-{image_position}")
         if slide_id % 2 == 0:
-            lines.append("<!-- _class: dark -->")
+            classes.append("dark")
+
+        if classes:
+            lines.append(f"<!-- _class: {' '.join(classes)} -->")
             lines.append("")
 
-        # 标题
-        lines.append(f"## {title}")
-        lines.append("")
+        # 根据布局类型生成内容
+        has_image = bool(image)
+        use_flex_layout = layout in ("side-by-side", "image-first", "cards")
 
-        # 关键点（作为引言）
-        if key_points:
-            lines.append(f"**{key_points}**")
+        if use_flex_layout and has_image and layout != "cards":
+            # 左右分栏或图片优先布局
+            lines.append('<div class="content">')
+            lines.append(f"## {title}")
             lines.append("")
+            if key_points:
+                lines.append(f"**{key_points}**")
+                lines.append("")
+            for point in bullet_points:
+                lines.append(f"- {point}")
+            lines.append('</div>')
+            lines.append("")
+            lines.append('<div class="visual">')
+            lines.append(f"![img]({image})")
+            lines.append('</div>')
+        elif layout == "cards" and bullet_points:
+            # 卡片布局 - 每个要点一个卡片
+            lines.append(f"## {title}")
+            lines.append("")
+            for point in bullet_points:
+                lines.append(f'<div class="card">\n\n- {point}\n\n</div>')
+            if image:
+                lines.append("")
+                lines.append(f"![img]({image})")
+        else:
+            # 默认垂直堆砌布局
+            lines.append(f"## {title}")
+            lines.append("")
+            if key_points:
+                lines.append(f"**{key_points}**")
+                lines.append("")
+            for point in bullet_points:
+                lines.append(f"- {point}")
+            lines.append("")
+            if image:
+                lines.append(f"![img]({image})")
 
-        # 要点列表
-        for point in bullet_points:
-            lines.append(f"- {point}")
         lines.append("")
 
         # 语音备注

@@ -129,7 +129,7 @@ def generate_image(
     model: str = DEFAULT_MODEL,
     max_retries: int = 3,
     rate_limiter_instance: Optional[RateLimiter] = None,
-) -> bool:
+) -> ImageResult:
     """
     调用 ModelScope API 生成单张图片
 
@@ -142,7 +142,7 @@ def generate_image(
         rate_limiter_instance: 速率限制器实例
 
     Returns:
-        是否成功
+        ImageResult: 图片生成结果
     """
     api_key = api_key or os.getenv("MODELSCOPE_API_KEY")
     if not api_key:
@@ -192,10 +192,10 @@ def generate_image(
                 time.sleep(delay)
             else:
                 logger.error(f"[失败] {output_path}: {e}")
-                return False
+                return ImageResult(success=False, output_path=output_path, error=str(e))
 
     if not task_id:
-        return False
+        return ImageResult(success=False, output_path=output_path, error="未获取到任务ID")
 
     # 轮询结果
     elapsed = time.time() - start_time
@@ -219,12 +219,12 @@ def generate_image(
                 image.save(output_path)
                 elapsed = time.time() - start_time
                 logger.info(f"[完成] {output_path} ({elapsed:.1f}s)")
-                return True
+                return ImageResult(success=True, output_path=output_path, task_id=task_id, elapsed_time=elapsed)
 
             if status == "FAILED":
                 error_msg = data.get("message", "未知错误")
                 logger.error(f"[失败] {output_path}: {error_msg}")
-                return False
+                return ImageResult(success=False, output_path=output_path, task_id=task_id, error=error_msg)
 
             # 继续轮询
             time.sleep(DEFAULT_POLL_INTERVAL)
@@ -240,7 +240,7 @@ def generate_image(
             elapsed = time.time() - start_time
 
     logger.error(f"[超时] {output_path} (超过 {DEFAULT_MAX_POLL_TIME}s)")
-    return False
+    return ImageResult(success=False, output_path=output_path, task_id=task_id, error="超时")
 
 
 def generate_images_batch(
@@ -249,7 +249,7 @@ def generate_images_batch(
     model: str = DEFAULT_MODEL,
     max_workers: int = DEFAULT_WORKERS,
     rate_limit: float = DEFAULT_RATE_LIMIT,
-) -> dict[str, bool]:
+) -> dict[str, ImageResult]:
     """
     并发生成多张图片
 
@@ -292,12 +292,12 @@ def generate_images_batch(
                 results[output_path] = future.result()
             except Exception as e:
                 logger.error(f"[异常] {output_path}: {e}")
-                results[output_path] = False
+                results[output_path] = ImageResult(success=False, output_path=output_path, error=str(e))
 
             # 进度显示
             logger.info(f"[进度] {completed}/{total}")
 
-    success_count = sum(1 for v in results.values() if v)
+    success_count = sum(1 for v in results.values() if v.success)
     logger.info(f"\n[结果] {success_count}/{len(tasks)} 成功")
 
     return results

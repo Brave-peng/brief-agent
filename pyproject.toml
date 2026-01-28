@@ -29,7 +29,7 @@ dependencies = [
 ]
 
 [project.scripts]
-brief = "main:main"
+brief = "src.cli.main:main"
 
 [project.optional-dependencies]
 dev = [

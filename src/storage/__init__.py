@@ -2,7 +2,7 @@
 from src.storage.db import Database
 from src.storage.logger import setup_logger as _setup_logger
 
-__all__ = ["Database", "get_db", "setup_logger"]
+__all__ = ["Database", "get_db"]
 
 
 def get_db() -> Database:

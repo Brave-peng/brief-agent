@@ -160,9 +160,30 @@ FastAPI 专项:
 触发词: "看看效果", "视觉审查", "设计点评"
 
 功能:
-- 支持: .pptx, .md, .png/.jpg
+- 支持: .pptx, .png/.jpg
 - 维度: 布局(30%), 视觉(25%), 内容(25%), 一致性(20%)
 - 输出: 评分 + 优点 + 改进建议
+
+直接渲染 PDF/PPT 命令:
+# 1. JSON 渲染 PPT (需安装 marp-cli: npm i -g @marp-team/marp-cli)
+uv run python -c "
+import sys; sys.path.insert(0, 'src')
+import json
+from pathlib import Path
+from render.ppt.marp_builder import MarpPPBuilder
+from render.ppt.json_to_marp import json_to_marp_markdown
+
+data = json.load(open('data/reports/your_report.json'))
+md = json_to_marp_markdown(data, template='default')
+Path('/tmp/preview.md').write_text(md)
+
+import subprocess
+subprocess.run(['marp', '/tmp/preview.md', '-o', '/tmp/preview.pptx', '--ppt'])
+"
+open /tmp/preview.pptx
+
+# 2. 渲染 PDF
+marp /tmp/preview.md -o /tmp/preview.pdf && open /tmp/preview.pdf
 ```
 
 ---
