@@ -1,18 +1,20 @@
 # Brief Agent
 
-企业级多模态知识内生 Agent 平台 (目标是把notebooklm狠狠学习一番) - 基于 LangGraph 的多模态内容自动生成与分发系统。
-**项目较多vibe coding, 在逐步的review代码中, 欢迎各路大佬指教.**
+企业级多模态知识内生 Agent 平台 - 基于 LangGraph 的多模态内容自动生成与分发系统。
+
+可以理解为本项目在逐步实现一个notebooklm的功能，并且集成了rss的一些功能。
+**项目较多vibe coding, 在逐步的review代码中, 欢迎各路大佬指教。**
+
+【占位， 视频展示栏目】
 
 
 ## 功能特性
 
 - **多源数据采集** - RSS 订阅管理，自动定时抓取
 - **AI 智能分析** - 多 Agent 协作（分析师、编剧、结构化专家、审核员）
-- **短视频脚本生成** - 将资讯转化为具备短视频逻辑的脚本
-- **视频渲染输出** - JSON 生产协议驱动 FFmpeg/MoviePy 渲染
+- **短视频生成** - 将资讯转化为短视频，支持tts。
 - **RAG 向量化检索** - 基于 ChromaDB 的语义搜索与知识增强
 - **日报/周报生成** - 自动汇总生成结构化报告
-- **定时任务调度** - 支持按需配置定时执行
 
 ## 快速开始
 
@@ -77,12 +79,26 @@ vector_db:
 
 ### 4. 运行程序
 
+项目使用typer构建CLI，遇到任意命令不清楚时，可以通过--help的方法查看使用方法。
+
 ```bash
 # 使用 uv 运行
-uv run python main.py fetch              # 抓取 RSS
-uv run python main.py parse              # 解析文章
-uv run python main.py report 2026-01-11  # 生成日报
-uv run python main.py ppt from-file report.md  # 从 Markdown 生成 PPT
+$ uv run main.py --help
+                                                                                                                                                                                              
+ Usage: main.py [OPTIONS] COMMAND [ARGS]...                                                                                                                                                   
+
+ Brief Agent - AI 驱动的知识平台
+
+╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                                                                                                                                │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ rss     RSS 内容处理                                                                                                                                                                       │
+│ image   图片生成                                                                                                                                                                           │
+│ ppt     PPT 相关命令                                                                                                                                                                       │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+uv run python main.py rss fetch  # 抓取rss
 ```
 
 ## 项目结构
@@ -94,16 +110,33 @@ brief-agent/
 ├── env.example          # 环境变量示例
 ├── pyproject.toml       # 项目配置
 ├── uv.lock              # uv 锁定文件
+├── uv.toml              # uv 配置文件
 ├── README.md            # 项目文档
 ├── CLAUDE.md            # AI 助手文档
+├── LICENSE              # 许可证
+├── scripts/             # 工具脚本
+│   ├── fetch_sample.py
+│   ├── inspect_html.py
+│   ├── migrate_db.py
+│   ├── test_image_gen.py
+│   └── test_templates.py
+├── skills/              # AI 技能配置
+│   ├── code_review/
+│   ├── test_gen/
+│   └── visual-review/
 ├── src/
 │   ├── __init__.py      # 包初始化
+│   ├── config.py        # 配置加载
 │   ├── cli/             # CLI 模块
 │   │   ├── __init__.py
 │   │   ├── main.py      # CLI 入口（typer）
 │   │   ├── ppt.py       # PPT 命令
-│   │   └── ppt_converter.py  # Markdown → PPT 结构化
-│   ├── config.py        # 配置加载
+│   │   ├── ppt_converter.py  # Markdown → PPT 结构化
+│   │   ├── image.py     # 图片命令
+│   │   └── rss.py       # RSS 命令
+│   ├── llm/             # LLM 管理
+│   │   ├── __init__.py
+│   │   └── manager.py
 │   ├── models/          # 外部模型 API
 │   │   ├── llm/         # 文本 LLM (MiniMax/DeepSeek/ModelScope)
 │   │   │   ├── __init__.py
@@ -119,6 +152,7 @@ brief-agent/
 │   │       ├── dashscope.py
 │   │       └── minimax.py
 │   ├── prompts/         # 提示词模板
+│   │   └── generate_slides_from_script.md
 │   ├── agents/          # Agent 层 (LangGraph)
 │   │   ├── __init__.py
 │   │   ├── article_parser_langgraph.py  # 文章解析工作流
@@ -146,10 +180,7 @@ brief-agent/
 │               ├── corporate.md
 │               ├── gradient.md
 │               └── dark.md
-├── tests/               # 测试文件
 └── data/                # 数据目录（自动创建）
-    ├── sqlite/          # SQLite 数据库
-    ├── chroma/          # ChromaDB 向量库
     └── logs/            # 日志文件
 ```
 
@@ -259,6 +290,7 @@ uv run pytest tests/
 | ⏳ | PPT Agent路线 | 端到端 PPT 自动生成（内容分析→结构规划→视觉设计→图片生成→渲染输出）,参考paper:[PPTAgent](https://arxiv.org/abs/2501.03936)|
 | ⏳ | Token 管理系统 | 费用统计、链路追踪、可视化，考虑使用LangSmith|
 | ⏳ | 视觉评估 Review Agent | PPT/图片质量评审 |
+| ⏳ | marp方案管线| 基于marp方案的视频生成 |
 
 ### 规划中
 
