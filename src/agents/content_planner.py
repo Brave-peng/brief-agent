@@ -26,6 +26,7 @@ Usage:
     builder.build("output.pptx")
 """
 
+import json
 import logging
 from typing import Any
 
@@ -55,17 +56,6 @@ class ContentPlanner:
                 "2. config.yaml 中的 LLM 配置是否正确\n"
                 "3. 网络连接是否正常"
             ) from e
-
-    def _plan_with_rules(self, markdown_content: str, max_slides: int) -> dict[str, Any]:
-        """[已弃用] 使用基础规则解析 Markdown 为 PPT 结构
-
-        为了保持向后兼容而保留，但不再被主流程使用。
-        请使用 _plan_with_llm 进行 AI 驱动的规划。
-        """
-        logger.warning(
-            "[ContentPlanner] 规则解析模式已被弃用，请配置 LLM API Key 以使用 AI 驱动规划"
-        )
-        raise RuntimeError("规则解析模式已被弃用，请配置 LLM API Key")
 
     def plan(
         self,
