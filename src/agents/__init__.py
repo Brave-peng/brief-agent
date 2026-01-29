@@ -12,3 +12,9 @@ def get_llm() -> LLMManager:
     if _llm_manager is None:
         _llm_manager = LLMManager("deepseek")
     return _llm_manager
+
+
+# 导入内容规划器
+from src.agents.content_planner import ContentPlanner, plan_ppt_from_markdown
+
+__all__ = ["ContentPlanner", "plan_ppt_from_markdown", "get_llm"]
