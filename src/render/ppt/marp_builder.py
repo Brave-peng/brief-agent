@@ -3,6 +3,7 @@ Marp PPT 构建器
 
 JSON → Marp Markdown → PPT
 """
+
 import logging
 import subprocess
 from pathlib import Path
@@ -41,9 +42,7 @@ class MarpPPBuilder(PPTBuilder):
         """查找 marp CLI"""
         # 先尝试 npm 全局安装的 marp
         try:
-            result = subprocess.run(
-                ["which", "marp"], capture_output=True, text=True
-            )
+            result = subprocess.run(["which", "marp"], capture_output=True, text=True)
             if result.returncode == 0:
                 return result.stdout.strip()
         except FileNotFoundError:
@@ -65,10 +64,14 @@ class MarpPPBuilder(PPTBuilder):
         logger.info("Marp Markdown 已生成: %s", marp_path)
 
         # 2. Marp → PPT
-        if self.marp_cli_path:
-            self._render_with_marp(marp_path, output_path)
-        else:
-            logger.warning("Marp CLI 未安装，保存 Marp Markdown 文件")
+        if not self.marp_cli_path:
+            raise RuntimeError(
+                "Marp CLI 未安装。请执行以下命令安装:\n"
+                "  npm install -g @marp-team/marp-cli\n\n"
+                "或使用 direct 构建器（无需 Marp CLI）:\n"
+                "  --builder direct"
+            )
+        self._render_with_marp(marp_path, output_path)
 
     def _render_with_marp(self, marp_path: Path, output_path: str) -> None:
         """使用 marp CLI 渲染"""
