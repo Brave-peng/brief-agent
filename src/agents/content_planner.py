@@ -26,9 +26,7 @@ Usage:
     builder.build("output.pptx")
 """
 
-import json
 import logging
-import re
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -144,8 +142,6 @@ class ContentPlanner:
             user_prompt=user_prompt,
             json_mode=True,
         )
-
-        import json
 
         return json.loads(response.strip())
 

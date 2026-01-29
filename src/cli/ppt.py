@@ -18,8 +18,6 @@ ppt_app = typer.Typer(
 
 def generate_ppt_from_content(markdown_content: str, date: str, builder_name: str) -> None:
     """从 Markdown 内容生成 PPT"""
-    from src.cli.ppt_converter import _fallback_structure
-
     typer.echo("正在结构化 PPT 内容...")
 
     # 1. LLM 智能拆分
@@ -152,8 +150,6 @@ def ppt_from_file(
 ) -> None:
     """从 Markdown 文件生成 PPT（旧版，建议使用 from-md）"""
     typer.echo("⚠️  此命令已弃用，建议使用: ppt from-md")
-
-    from datetime import date as date_type
 
     input_path = Path(input_file)
     if not input_path.exists():
